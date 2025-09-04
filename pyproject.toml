@@ -16,13 +16,14 @@ dependencies = [
   "typer>=0.12.0",
   "rich>=13.0.0",
   "GitPython>=3.1.45",
+  "inquirer>=3.4.1",
 ]
 
 [project.scripts]
 vibe = "vibe.cli:app"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["vibe"]
 
 [project.optional-dependencies]
 dev = [
