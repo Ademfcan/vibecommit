@@ -5,11 +5,13 @@ from rich.console import Console
 console = Console()
 app = typer.Typer(help="Initialize vibe in a repository")
 
+
 @app.command()
 def repo():
     """Initialize vibe for the current repo"""
     # Detect Git repo and create config
     console.print(Panel("✨ vibe initialized in current repository", style="green"))
+
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):

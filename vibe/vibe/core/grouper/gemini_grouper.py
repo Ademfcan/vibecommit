@@ -13,8 +13,10 @@ from vibe.core.data.diff_chunk import DiffChunk
 from .interface import GrouperInterface
 from ..data.models import CommitGroup
 
+
 class ChangeGroup(BaseModel):
     """Represents a group of related changes as analyzed by Gemini."""
+
     group_id: str
     commit_message: str
     branch_name: str
@@ -23,7 +25,7 @@ class ChangeGroup(BaseModel):
     description: Optional[str]  # Brief description of why these changes are grouped
 
 
-SYSTEM_PROMPT = '''You are an expert code reviewer analyzing code changes.
+SYSTEM_PROMPT = """You are an expert code reviewer analyzing code changes.
 Analyze the provided changes and group them by intention and purpose.
 Your response must be valid JSON matching this structure:
 
@@ -46,21 +48,22 @@ Guidelines:
 4. Include extended_message only for complex changes
 5. Each change must be assigned to exactly one group
 6. Provide brief description of grouping rationale
-'''
+"""
 
-ANALYSIS_PROMPT = '''Analyze these code changes and group them by intention:
+ANALYSIS_PROMPT = """Analyze these code changes and group them by intention:
 
 {changes_json}
 
 Return a JSON response that strictly follows the schema.
 Ensure every chunk_id is assigned to exactly one group.
-'''
+"""
+
 
 class GeminiGrouper(GrouperInterface):
     def __init__(self, api_key: str):
         """Initialize the grouper with Gemini API credentials."""
         self.client = genai.Client(api_key=api_key)
-    
+
     def _prepare_changes(self, chunks: List[DiffChunk]) -> str:
         """Convert chunks to a structured format for Gemini analysis."""
         changes = []
@@ -68,50 +71,52 @@ class GeminiGrouper(GrouperInterface):
             # Get the JSON representation of the chunk
             change = json.loads(chunk.format_json())
             # Add a unique ID for reference
-            change['chunk_id'] = str(i)
+            change["chunk_id"] = str(i)
             changes.append(change)
         return json.dumps({"changes": changes}, indent=2)
 
-    def _create_commit_groups(self, 
-                          response: List[ChangeGroup], 
-                          chunks: List[DiffChunk]) -> List[CommitGroup]:
+    def _create_commit_groups(
+        self, response: List[ChangeGroup], chunks: List[DiffChunk]
+    ) -> List[CommitGroup]:
         """Convert Gemini's response into CommitGroup objects."""
         # Create a lookup map for chunks
         chunk_map = {str(i): chunk for i, chunk in enumerate(chunks)}
-        
+
         commit_groups = []
         for group in response:
             # Collect all chunks for this group
             group_chunks = [
-                chunk_map[chunk_id] 
-                for chunk_id in group.changes 
+                chunk_map[chunk_id]
+                for chunk_id in group.changes
                 if chunk_id in chunk_map
             ]
-            
+
             if not group_chunks:
                 continue
-                
+
             # Create a CommitGroup for these changes
-            commit_groups.append(CommitGroup(
-                chunks=group_chunks,
-                group_id=group.group_id,
-                branch_name=group.branch_name,
-                commmit_message=group.commit_message,
-                extended_message=group.extended_message
-            ))
-            
+            commit_groups.append(
+                CommitGroup(
+                    chunks=group_chunks,
+                    group_id=group.group_id,
+                    branch_name=group.branch_name,
+                    commmit_message=group.commit_message,
+                    extended_message=group.extended_message,
+                )
+            )
+
         return commit_groups
 
     def group_chunks(self, chunks: List[DiffChunk]) -> List[CommitGroup]:
         """
         Group chunks using Gemini API to analyze intentions and relationships.
-        
+
         Args:
             chunks: List of ExtendedDiffChunks to analyze and group
-            
+
         Returns:
             List of CommitGroup objects with semantically related changes
-            
+
         Raises:
             ValueError: If Gemini's response cannot be parsed or is invalid
         """
@@ -120,7 +125,7 @@ class GeminiGrouper(GrouperInterface):
 
         # Prepare the changes for analysis
         changes_json = self._prepare_changes(chunks)
-        
+
         # Get Gemini's analysis
         prompt = ANALYSIS_PROMPT.format(changes_json=changes_json)
 
@@ -138,7 +143,5 @@ class GeminiGrouper(GrouperInterface):
 
         # Use instantiated objects.
         grouping_response: List[ChangeGroup] = response.parsed
-        
+
         return self._create_commit_groups(grouping_response, chunks)
-        
-        
