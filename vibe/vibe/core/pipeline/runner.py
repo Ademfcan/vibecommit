@@ -8,6 +8,7 @@ from vibe.core.data.r_diff_chunk import RenameDiffChunk
 from ..git_interface.interface import GitInterface
 from ..commands.git_commands import GitCommands
 from ..synthesizer.git_synthesizer_porcelain import GitSynthesizer
+
 # from ..synthesizer.git_synthesizer_opt import GitSynthesizer
 from ..chunker.interface import ChunkerInterface
 from ..grouper.interface import GrouperInterface
@@ -67,13 +68,14 @@ class AIGitPipeline:
 
             raw_diff: List[DiffChunk] = self.commands.get_processed_diff(target)
 
-            
-            if not chunks_disjoint([chunk for chunk in raw_diff if isinstance(chunk, StandardDiffChunk) ]):
+            if not chunks_disjoint(
+                [chunk for chunk in raw_diff if isinstance(chunk, StandardDiffChunk)]
+            ):
                 raise RuntimeError("initial diff chunks are not disjoint!")
             else:
                 for chunk in raw_diff:
                     print("Chunk status right from diff")
-                    print(chunk.format_json()) 
+                    print(chunk.format_json())
 
             p.advance(tr, 1)
 
@@ -81,24 +83,26 @@ class AIGitPipeline:
 
             chunks: List[DiffChunk] = self.chunker.chunk(raw_diff)
 
-            if not chunks_disjoint([chunk for chunk in chunks if isinstance(chunk, StandardDiffChunk) ]):
+            if not chunks_disjoint(
+                [chunk for chunk in chunks if isinstance(chunk, StandardDiffChunk)]
+            ):
                 raise RuntimeError("Chunked chunks are not disjoint!")
             else:
                 for chunk in chunks:
                     print("chunk status after splitting chunks further")
                     print(chunk.format_json())
 
-
             p.advance(ck, 1)
-
 
             clssfy = p.add_task("Grouping diff", total=1)
 
             def on_progress(percent):
                 # percent is 0-100, progress bar expects 0-1
-                p.update(clssfy, completed=percent/100)
+                p.update(clssfy, completed=percent / 100)
 
-            grouped: List[CommitGroup] = self.grouper.group_chunks(chunks, message, on_progress=on_progress)
+            grouped: List[CommitGroup] = self.grouper.group_chunks(
+                chunks, message, on_progress=on_progress
+            )
 
             # Ensure progress bar is complete at the end
             p.update(clssfy, completed=1)
@@ -108,13 +112,14 @@ class AIGitPipeline:
         for group in grouped:
             full_chunks.extend(group.chunks)
 
-        if not chunks_disjoint([chunk for chunk in full_chunks if isinstance(chunk, StandardDiffChunk) ]):
-                raise RuntimeError("Grouped chunks are not disjoint!")
+        if not chunks_disjoint(
+            [chunk for chunk in full_chunks if isinstance(chunk, StandardDiffChunk)]
+        ):
+            raise RuntimeError("Grouped chunks are not disjoint!")
         else:
             for chunk in full_chunks:
                 print("chunk status after grouping chunks")
                 print(chunk.format_json())
-
 
         console = Console()
 

@@ -6,6 +6,7 @@ from vibe.core.data.models import Addition, Removal
 from vibe.core.checks.chunk_checks import chunks_disjoint as check_disjoint
 import importlib
 
+
 # Helper: flatten parsed_content to (type, line_number, content) tuples
 def flatten_chunk(chunk):
     """Flatten a chunk (including CompositeDiffChunk) to tuples."""
@@ -21,6 +22,7 @@ def flatten_chunk(chunk):
         ]
     return []
 
+
 def chunks_disjoint(chunks):
     """Check that chunks are disjoint using official checker."""
     standard_chunks = []
@@ -30,6 +32,7 @@ def chunks_disjoint(chunks):
         elif isinstance(chunk, CompositeDiffChunk):
             standard_chunks.extend(chunk.chunks)
     return check_disjoint(standard_chunks)
+
 
 def chunks_reconstruct_input(chunks, original):
     # Flatten all output chunks
@@ -41,26 +44,33 @@ def chunks_reconstruct_input(chunks, original):
     # Compare as multisets (order and content must match)
     return sorted(out_items) == sorted(orig_items)
 
+
 CHUNKERS = [
-    ("vibe.core.chunker.predicate_chunker.PredicateChunker", {"split_predicate": lambda x: x.strip() == ""}),
+    (
+        "vibe.core.chunker.predicate_chunker.PredicateChunker",
+        {"split_predicate": lambda x: x.strip() == ""},
+    ),
     ("vibe.core.chunker.max_line_chunker.MaxLineChunker", {"max_chunks": 3}),
 ]
 
+
 def run_chunker_invariants(chunker, orig):
     out_chunks = chunker.chunk([orig])
-    assert chunks_reconstruct_input(out_chunks, orig), "Output chunks do not reconstruct input"
+    assert chunks_reconstruct_input(
+        out_chunks, orig
+    ), "Output chunks do not reconstruct input"
     assert chunks_disjoint(out_chunks), "Output chunks are not pairwise disjoint"
+
 
 @pytest.mark.parametrize("chunker_cls,chunker_kwargs", CHUNKERS)
 def test_chunker_invariants_overlap(chunker_cls, chunker_kwargs):
     # Additions and removals overlap (same line numbers)
-    mod_name, cls_name = chunker_cls.rsplit('.', 1)
+    mod_name, cls_name = chunker_cls.rsplit(".", 1)
     mod = importlib.import_module(mod_name)
     Chunker = getattr(mod, cls_name)
     chunker = Chunker(**chunker_kwargs)
     orig = StandardDiffChunk(
         _file_path="foo.py",
-       
         parsed_content=[
             Addition(content="a", line_number=1),
             Removal(content="b", line_number=1),
@@ -72,16 +82,16 @@ def test_chunker_invariants_overlap(chunker_cls, chunker_kwargs):
     )
     run_chunker_invariants(chunker, orig)
 
+
 @pytest.mark.parametrize("chunker_cls,chunker_kwargs", CHUNKERS)
 def test_chunker_invariants_pure_additions(chunker_cls, chunker_kwargs):
     # Only additions
-    mod_name, cls_name = chunker_cls.rsplit('.', 1)
+    mod_name, cls_name = chunker_cls.rsplit(".", 1)
     mod = importlib.import_module(mod_name)
     Chunker = getattr(mod, cls_name)
     chunker = Chunker(**chunker_kwargs)
     orig = StandardDiffChunk(
         _file_path="foo.py",
-       
         parsed_content=[
             Addition(content="a", line_number=1),
             Addition(content="b", line_number=2),
@@ -92,16 +102,16 @@ def test_chunker_invariants_pure_additions(chunker_cls, chunker_kwargs):
     )
     run_chunker_invariants(chunker, orig)
 
+
 @pytest.mark.parametrize("chunker_cls,chunker_kwargs", CHUNKERS)
 def test_chunker_invariants_pure_removals(chunker_cls, chunker_kwargs):
     # Only removals
-    mod_name, cls_name = chunker_cls.rsplit('.', 1)
+    mod_name, cls_name = chunker_cls.rsplit(".", 1)
     mod = importlib.import_module(mod_name)
     Chunker = getattr(mod, cls_name)
     chunker = Chunker(**chunker_kwargs)
     orig = StandardDiffChunk(
         _file_path="foo.py",
-       
         parsed_content=[
             Removal(content="a", line_number=10),
             Removal(content="b", line_number=11),
