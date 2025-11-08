@@ -1,9 +1,9 @@
 from tree_sitter import Node
 
-from vibe.semantic_grouping.semantic_grouper.query_manager import QueryManager
-from vibe.semantic_grouping.semantic_grouper.scope_mapper import ScopeMapper, ScopeMap
-from vibe.semantic_grouping.semantic_grouper.symbol_mapper import SymbolMapper, SymbolMap
-from vibe.semantic_grouping.file_reader.file_parser import FileParser
+from vibe.core.semantic_grouper.query_manager import QueryManager
+from vibe.core.semantic_grouper.scope_mapper import ScopeMapper, ScopeMap
+from vibe.core.semantic_grouper.symbol_mapper import SymbolMapper, SymbolMap
+from vibe.core.file_reader.file_parser import FileParser
 
 
 # --- MAIN EXECUTION ---
@@ -50,7 +50,9 @@ for line, symbols in sorted(sym_map.line_symbols.items()):
         parts = symbol.split(":", 2)
         if len(parts) == 3:
             scope_name, match_class, text = parts
-            print(f"  Symbol: {repr(text):<10} | Line: {line:<5} | Qualified Name: {symbol}")
+            print(
+                f"  Symbol: {repr(text):<10} | Line: {line:<5} | Qualified Name: {symbol}"
+            )
 
 print("\n--- Final Scoped Symbol Map ---")
 for line, symbols in sorted(sym_map.line_symbols.items()):
@@ -58,19 +60,19 @@ for line, symbols in sorted(sym_map.line_symbols.items()):
 print("-" * 25)
 
 
-def get_signature(start_line : int, end_line : int):
+def get_signature(start_line: int, end_line: int):
     signature = set()
     for line in range(start_line, end_line + 1):
         signature.update(sym_map.line_symbols.get(line, []))
-    
+
     return signature
 
 
 hunk1 = (6, 8)
 hunk2 = (9, 11)
 
-hunk1_sig = get_signature(hunk1[0], hunk1[1]) 
-hunk2_sig = get_signature(hunk2[0], hunk2[1]) 
+hunk1_sig = get_signature(hunk1[0], hunk1[1])
+hunk2_sig = get_signature(hunk2[0], hunk2[1])
 
 print(f"{hunk1_sig=}")
 print(f"{hunk2_sig=}")

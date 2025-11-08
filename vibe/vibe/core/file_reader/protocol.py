@@ -1,7 +1,9 @@
 from typing import Protocol
 
+
 class FileReader(Protocol):
     """An interface for reading file content."""
+
     def read(self, path: str, old_content: bool = False) -> str | None:
         """
         Reads the content of a file.

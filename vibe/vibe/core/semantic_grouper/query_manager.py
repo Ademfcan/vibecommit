@@ -35,7 +35,9 @@ class LanguageConfig:
                 filters = set(items.get("filters", []))
                 query = SharedTokenQueries(queries, filters)
             else:
-                raise ValueError(f"Invalid shared_token_queries entry for {token_class}")
+                raise ValueError(
+                    f"Invalid shared_token_queries entry for {token_class}"
+                )
             shared_token_queries[token_class] = query
 
         scope_queries = ScopeQueries(json_dict.get("scope_queries", []))
@@ -62,8 +64,8 @@ class LanguageConfig:
                     # Add a predicate that the QueryCursor will call. Predicate names
                     # do not include the leading '#', binding is done by name.
                     # We escape double-quotes in the filter string to keep the query valid.
-                    escaped = flt.replace('"', r'\"')
-                    lines.append(f"(#not-eq? @{capture_class} \"{escaped}\")")
+                    escaped = flt.replace('"', r"\"")
+                    lines.append(f'(#not-eq? @{capture_class} "{escaped}")')
 
                 if capture_queries.token_filters:
                     lines.append(")")
@@ -77,11 +79,15 @@ class QueryManager:
     """
 
     def __init__(self, language_config_path: Traversable):
-        self.language_configs: Dict[str, LanguageConfig] = self._init_configs(language_config_path)
+        self.language_configs: Dict[str, LanguageConfig] = self._init_configs(
+            language_config_path
+        )
         # cache per-language/per-query-type: key -> (Query, QueryCursor)
         self._cursor_cache: Dict[str, Tuple[Query, QueryCursor]] = {}
 
-    def _init_configs(self, language_config_path: Traversable) -> Dict[str, LanguageConfig]:
+    def _init_configs(
+        self, language_config_path: Traversable
+    ) -> Dict[str, LanguageConfig]:
         try:
             with language_config_path.open("r", encoding="utf-8") as fh:
                 config = json.load(fh)
@@ -89,7 +95,9 @@ class QueryManager:
             configs: Dict[str, LanguageConfig] = {}
             # iterate .items() to get (name, config)
             for language_name, language_config in config.items():
-                configs[language_name] = LanguageConfig.from_json_dict(language_name, language_config)
+                configs[language_name] = LanguageConfig.from_json_dict(
+                    language_name, language_config
+                )
             return configs
 
         except OSError as e:
@@ -150,7 +158,7 @@ class QueryManager:
                 return []
 
             query = Query(language, query_src)
-            cursor = QueryCursor(query) 
+            cursor = QueryCursor(query)
             self._cursor_cache[key] = (query, cursor)
         else:
             query, cursor = self._cursor_cache[key]

@@ -1,6 +1,7 @@
 from typing import Protocol
 from .diff_chunk import DiffChunk
 
+
 class Chunk(Protocol):
     def format_json(self) -> str:
         """
@@ -26,5 +27,3 @@ class Chunk(Protocol):
         Each tuple is structured (old_start, old_len, new_start, new_len)
         """
         ...
-
-
